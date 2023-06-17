@@ -20,7 +20,7 @@ Understanding immune-metabolic relationships by modeling the association between
 keras implementation (https://github.com/divamgupta/image-segmentation-keras/)
 ## Screenshots
 ![Example screenshot](PyCaret_model_ranking.png) -->
-![Example screenshot](PyCaret_feature_importance_best.png)
+![Example screenshot](ROC curves for LGBM classifier.png)
 <img src="PyCaret_feature_importance_best.png" width="500" />
 
 ## Technologies
