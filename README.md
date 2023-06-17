@@ -69,7 +69,7 @@ From feature selection, regularization analysis and the general screening, we ca
 Project is: _finished_ <!-- a normal html comment _finished_, _no longer continue_ and why?-->
 
 ## Report
-CS229 Summer 2022 Report [link](CS229__BMI_prediction_using_immune_markers.pdf)
+CS229 Summer 2022 Report [link](code/CS229__BMI_prediction_using_immune_markers.pdf)
 
 <!--## Inspiration-->
 <!--Add here credits. Project inspired by..., based on...-->
