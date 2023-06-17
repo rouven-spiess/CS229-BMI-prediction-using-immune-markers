@@ -5,8 +5,8 @@
 * [Technologies](#technologies)
 * [Screenshots](#screenshots)
 * [Status](#status)
-* [Inspiration](#inspiration)
-* [Contact](#contact)
+<!--* [Inspiration](#inspiration)
+* [Contact](#contact)-->
 
 ## General info
 Understanding immune-metabolic relationships by modeling the association between Body Mass Index (BMI), adipokines and other immune markers helps to generate novel biological insight. Especially to help target immune-metabolic dysfunctions such as obesity, diabetes or cancer. We received a dataset of 170 immune markers and 902 participants from the Stanford 1000 Immunomes Project. Our aim is to generate a good model to predict BMI. To do so, we have screened different algorithms:
