@@ -17,9 +17,9 @@ Understanding immune-metabolic relationships by modeling the association between
 * PyCaret model selection 
 
 <!--## Baseline Model
-keras implementation (https://github.com/divamgupta/image-segmentation-keras/)
+keras implementation (https://github.com/divamgupta/image-segmentation-keras/) -->
 ## Screenshots
-![Example screenshot](PyCaret_model_ranking.png) -->
+![Example screenshot](PyCaret_model_ranking.png)
 ![Example screenshot](ROC_curves_for_LGBM_classifier.png)
 <img src="PyCaret_feature_importance_best.png" width="500" />
 
