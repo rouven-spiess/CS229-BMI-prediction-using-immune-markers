@@ -16,10 +16,10 @@ Understanding immune-metabolic relationships by modeling the association between
 * Regularization algorithms 
 * PyCaret model selection 
 
-## Baseline Model
+<!--## Baseline Model
 keras implementation (https://github.com/divamgupta/image-segmentation-keras/)
 ## Screenshots
-![Example screenshot](PyCaret_model_ranking.png)
+![Example screenshot](PyCaret_model_ranking.png) -->
 ![Example screenshot](PyCaret_feature_importance_best.png)
 
 ## Technologies
