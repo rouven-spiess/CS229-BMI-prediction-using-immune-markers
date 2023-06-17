@@ -72,7 +72,7 @@ Project is: _finished_ <!-- a normal html comment _finished_, _no longer continu
 CS229 Summer 2022 Paper [link](paper/CS229__BMI_prediction_using_immune_markers.pdf)
 
 <!--## Inspiration-->
-<!--Add here credits. Project inspired by..., based on...-->
+<!--Add here credits. Project inspired by..., based on...
 
 <!--## Contact-->
 <!--Created by [@flynerdpl](https://www.flynerd.pl/) - feel free to contact me!-->
