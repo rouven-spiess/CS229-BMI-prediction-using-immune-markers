@@ -21,6 +21,7 @@ keras implementation (https://github.com/divamgupta/image-segmentation-keras/)
 ## Screenshots
 ![Example screenshot](PyCaret_model_ranking.png) -->
 ![Example screenshot](PyCaret_feature_importance_best.png)
+<img src="PyCaret_feature_importance_best.png" width="200" />
 
 ## Technologies
 * python - version 3.6.5
