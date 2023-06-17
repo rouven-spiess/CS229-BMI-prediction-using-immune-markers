@@ -37,7 +37,7 @@ keras implementation (https://github.com/divamgupta/image-segmentation-keras/) -
 <!--Available soon-->
 <!--Describe how to install / setup your local environement / add link to demo version.-->
 
-## Code Examples
+<!--## Code Examples
 Show examples of usage:
 ```
 from keras_segmentation.models.unet import unet_mini
@@ -60,7 +60,7 @@ model.train(
 
 ## Features
 List of features ready and TODOs for future development
-* Train on 3 different U-NET architecture variants
+* Train on 3 different U-NET architecture variants-->
 
 ## Results
 From feature selection, regularization analysis and the general screening, we can see that model performance is quite similar ( RMSE ∼ 3) and no model offers a very good approximation to BMI yet. Also, in all approaches, leptin, gender and age have come up as the most important features to focus on, as expected and discussed with our mentor.
@@ -69,7 +69,7 @@ From feature selection, regularization analysis and the general screening, we ca
 Project is: _finished_ <!-- a normal html comment _finished_, _no longer continue_ and why?-->
 
 ## Report
-CS230 Winter 2020 (http://cs230.stanford.edu/projects_winter_2020/reports/32641590.pdf)
+CS229 Summer 2022 ()
 
 <!--## Inspiration-->
 <!--Add here credits. Project inspired by..., based on...-->
