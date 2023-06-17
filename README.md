@@ -27,6 +27,11 @@ keras implementation (https://github.com/divamgupta/image-segmentation-keras/)
 * Pycaret
 * opencv_python - version 4.2.0.32
 * Augmentor - version 0.2.8
+* pycaret==2.3.10
+* markupsafe==2.0.1
+* pyyaml==5.4.1 -qq
+* scikit-learn==0.23.2
+* matplotlib==3.1.3
 
 <!--## Setup-->
 <!--Available soon-->
