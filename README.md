@@ -2,8 +2,8 @@
 
 ## Table of contents
 * [General info](#general-info)
-* [Screenshots](#screenshots)
 * [Technologies](#technologies)
+* [Screenshots](#screenshots)
 <!--* [Setup](#setup)
 * [Features](#features) -->
 * [Status](#status)
@@ -14,15 +14,7 @@
 Understanding immune-metabolic relationships by modeling the association between Body Mass Index (BMI), adipokines and other immune markers helps to generate novel biological insight. Especially to help target immune-metabolic dysfunctions such as obesity, diabetes or cancer. We received a dataset of 170 immune markers and 902 participants from the Stanford 1000 Immunomes Project. Our aim is to generate a good model to predict BMI. To do so, we have screened different algorithms:
 * Linear regression on a reduced feature space
 * Regularization algorithms 
-* PyCaret model selection 
-
-<!--## Baseline Model
-keras implementation (https://github.com/divamgupta/image-segmentation-keras/) -->
-## Screenshots
-![Example screenshot](model_selection.png)
-![Example screenshot](ROC_curves_for_LGBM_classifier.png)
-![Example screenshot](feature_importance.png)
-<!--<img src="PyCaret_feature_importance_best.png" width="500" /> -->
+* PyCaret model selection
 
 ## Technologies
 * python - version 3.6.5
@@ -32,6 +24,16 @@ keras implementation (https://github.com/divamgupta/image-segmentation-keras/) -
 * pyyaml==5.4.1 -qq
 * scikit-learn==0.23.2
 * matplotlib==3.1.3
+
+<!--## Baseline Model
+keras implementation (https://github.com/divamgupta/image-segmentation-keras/) -->
+## Screenshots
+![Example screenshot](model_selection.png)
+![Example screenshot](ROC_curves_for_LGBM_classifier.png)
+![Example screenshot](feature_importance.png)
+<!--<img src="PyCaret_feature_importance_best.png" width="500" /> -->
+
+
 
 <!--## Setup-->
 <!--Available soon-->
