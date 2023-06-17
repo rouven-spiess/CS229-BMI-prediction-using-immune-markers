@@ -19,7 +19,8 @@ Understanding immune-metabolic relationships by modeling the association between
 ## Baseline Model
 keras implementation (https://github.com/divamgupta/image-segmentation-keras/)
 ## Screenshots
-![Example screenshot](image.png)
+![Example screenshot](PyCaret_model_ranking.png)
+![Example screenshot](PyCaret_feature_importance_best)
 
 ## Technologies
 * python - version 3.6.5
