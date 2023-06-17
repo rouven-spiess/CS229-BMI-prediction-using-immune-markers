@@ -26,9 +26,9 @@ Understanding immune-metabolic relationships by modeling the association between
 <!--## Baseline Model
 keras implementation (https://github.com/divamgupta/image-segmentation-keras/) -->
 ## Screenshots
-![Example screenshot](model_selection.png)
-![Example screenshot](ROC_curves_for_LGBM_classifier.png)
-![Example screenshot](feature_importance.png)
+<img src="model_selection.png" width="500" />
+<img src="ROC_curves_for_LGBM_classifier.png" width="500" />
+<img src="feature_importance.png" width="500" />
 <!--<img src="PyCaret_feature_importance_best.png" width="500" /> -->
 
 
