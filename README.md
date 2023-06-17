@@ -22,7 +22,7 @@ keras implementation (https://github.com/divamgupta/image-segmentation-keras/) -
 ![Example screenshot](model_selection.png)
 ![Example screenshot](ROC_curves_for_LGBM_classifier.png)
 ![Example screenshot](feature_importance.png)
-<img src="PyCaret_feature_importance_best.png" width="500" />
+<!--<img src="PyCaret_feature_importance_best.png" width="500" /> -->
 
 ## Technologies
 * python - version 3.6.5
