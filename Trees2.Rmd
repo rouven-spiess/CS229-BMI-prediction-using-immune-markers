@@ -1,0 +1,533 @@
+------
+title: "Untitled"
+output: html_document
+---
+#set three trees for classification and regression with and without PCA and see what happens - REPORT
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidylog)
+library(data.table)
+library(ggforce)
+library(ggstatsplot)
+
+library(partykit)
+library(treesnip)
+library(lightgbm)
+library(tidymodels)
+
+library(workflows)
+library(yardstick)
+
+library(finetune)
+```
+
+```{r}
+Stanford <- read.csv("stanford_1kip.csv") %>%
+  separate(xID, c("Study", "ID"), "_") %>%
+  mutate(CSV = "Stanford") %>%
+  mutate(missing = rowSums(is.na(.)))
+
+Stanford$ID <- as.numeric(Stanford$ID)
+
+```
+
+```{r}
+
+data <- Stanford %>% 
+  select(-c(CSV, missing, Study, ID)) %>%
+  dplyr::mutate_at(vars(GENDER, CMV), as.numeric)
+
+col_y <- "BMI" #outcome
+y <- data[[col_y]]
+
+set.seed(132)
+
+splits <- initial_split(data, strata = col_y, prop = 3/4)
+data_trn <- splits %>% rsample::training()
+data_tst <- splits %>% rsample::testing()
+```
+
+
+```{r}
+#Simple
+
+dt_mod <- decision_tree(
+  cost_complexity = tune(),
+  tree_depth = tune(),
+  min_n = tune()
+) %>%
+  set_engine(engine = "rpart") %>%
+  set_mode(mode = "regression")
+
+#Simple2
+dt_mod2 <- decision_tree(
+  cost_complexity = tune(),
+  tree_depth = tune(),
+  min_n = tune()
+) %>%
+  set_engine(engine = "partykit") %>%
+  set_mode(mode = "regression") 
+
+#boost
+bt_mod <- boost_tree(
+  mtry = tune(),
+  tree_depth = tune(),
+  min_n = tune(), 
+  learn_rate = tune()
+) %>%
+  set_engine(engine = "lightgbm") %>%
+  set_mode(mode = "regression")
+```
+
+
+```{r}
+#RECEPIE: Check with variables from lasso and without - Selected
+
+library(data.table)
+setwd("Trial_20220527_0042")
+tbl_fread <- 
+    list.files(pattern = "*.csv") %>% 
+    map_df(~fread(.)) 
+#ch4ck whats up with age
+Select <- tbl_fread %>% 
+  select(name, Thresh) %>%
+  filter(Thresh == 1) 
+
+Selected <- unique(Select$name)
+
+```
+
+
+```{r}
+
+SelectedDelete <- setdiff( names(data_trn),c(Selected,"AGE"))
+
+AllRec <- recipe(BMI ~ ., data = data_trn)
+PreparedPreProc <- AllRec %>% prep()
+AllData <- juice(PreparedPreProc)
+
+LASSO <- AllRec %>% 
+  step_rm(SelectedDelete) %>%
+  step_normalize(all_numeric()) %>% #skip = TRUE
+  step_dummy(all_nominal(),  one_hot = FALSE) %>%
+  step_zv(all_predictors()) #added
+PreparedPreProc <- LASSO %>% prep()
+LASSOData <- juice(PreparedPreProc) #Imaging dataset ( only imaging information and outcome)
+
+PCA <- AllRec %>% 
+  step_rm(c("GENDER","CMV")) %>%
+  step_normalize(all_numeric()) %>% #skip = TRUE
+  step_pca(all_predictors(),num_comp = 20) #added
+PreparedPreProc <- PCA %>% prep()
+PCAData <- juice(PreparedPreProc) #Imaging dataset ( only imaging information and outcome)
+
+
+```
+
+```{r}
+recipe_list <- 
+  list( AllData = AllRec, LASSOData = LASSO, PCAData = PCA)
+
+model_list <- 
+  list( DtRpart = dt_mod, DtParty = dt_mod2, lightgbm = bt_mod)
+
+#recipe_list <- 
+#  list( ProcessedData = Processed)
+#
+#model_list <- 
+#  list( xgboost = dt_mod )
+#
+
+```
+
+```{r}
+model_set <- workflow_set(preproc = recipe_list, models = model_list, cross = T)
+
+Run <- "Trial"
+Total <- paste0(Run,"_", Sys.time())
+
+#train_resamples <- bootstraps(uni_train, times = 5) #cannot reduce bootstrap to 2!!!
+cv_splits <- rsample::vfold_cv(data_trn, v = 5, strata = col_y)
+
+multi_metric2 <- yardstick::metric_set(rmse, rsq, mae)
+
+race_ctrl <-
+  control_race(
+    save_pred = TRUE,
+    parallel_over = "everything",
+    save_workflow = FALSE #TRUE
+  )
+
+race_results <-
+  model_set %>%
+  workflow_map(
+    "tune_grid",
+    seed = 1503,
+    resamples = cv_splits,
+    grid = 25,
+    control = race_ctrl, 
+    verbose = TRUE,
+    metrics = multi_metric2
+  )
+
+
+
+
+
+```
+
+
+```{r}
+
+mae_stats <- collect_metrics(race_results, summarize = TRUE) %>%
+  filter(.metric == "rsq") %>%
+  group_by(wflow_id) %>%
+   distinct(mean, .keep_all = TRUE) %>% #remove all duplicate words
+  top_n(1,mean) %>%
+  separate(wflow_id, into = c("Recipe", "Model_Type"), sep = "_", remove = F, extra = "merge") %>%
+  ungroup()%>%
+  rename(Data_Preprocessing = Recipe, R2=mean) %>%
+  filter(Data_Preprocessing != "LASSOData") %>%
+  mutate(rank = rank(-R2,ties.method = "random")) 
+
+pdf("ModelTypePlot2.pdf",4,2)
+print(ggplot(mae_stats, aes(rank,R2, colour = Model_Type, shape = Data_Preprocessing)) +
+  geom_point() + 
+  geom_errorbar(aes(ymin=R2-std_err, ymax=R2+std_err), width=.2,
+                 position=position_dodge(0.05)) + 
+  theme_bw()
+)
+dev.off()
+```
+
+```{r}
+
+autoplot(race_results, id = "AllData_DtParty", metric = "rsq") + theme_bw()
+
+```
+
+
+
+```{r}
+
+
+choose_f_predict <- function(i) {
+  
+  engine <- i
+  
+  f_generic <- function(object, newdata) predict(object, newdata = newdata)
+  fs <-
+    list(
+      'xgboost' = f_generic,
+      'DtRpart' = f_generic,
+      'DtParty' = f_generic,
+      'lightgbm' = f_generic
+    )
+  fs[[engine]]
+}
+
+
+choose_data_setX <- function(i) {
+  
+  data_trn_jui <- eval(parse(text = str_split(i, "_")[[1]][[1]]))
+  x_trn_jui <-  data_trn_jui[, setdiff(names(data_trn_jui), col_y)]  %>% as.matrix()
+  
+  
+}
+
+choose_data_setY <- function(i) {
+  
+  data_trn_jui <-  eval(parse(text = str_split(i, "_")[[1]][[1]]))
+  
+  y_trn_jui <- data_trn_jui[[col_y]]
+  
+}
+
+best_results <- list()
+boosting_test_resultsWF <- list()
+boosting_test_results <- list()
+vi_rnks <- list()
+hh <- list()
+
+
+
+########### for loop
+
+
+for ( i in race_results$wflow_id){
+  
+  #result <- foreach(i = race_results$wflow_id ) %dopar% { #.combine='c', .multicombine=TRUE
+  
+  print(paste0("....................", i))
+  
+  best_results[[i]] <- 
+    race_results %>% 
+    extract_workflow_set_result(i) %>% 
+    select_best(metric = "rsq")
+  
+  boosting_test_resultsWF[[i]] <- 
+    race_results %>% 
+    extract_workflow(i) %>%
+    finalize_workflow(best_results[[i]]) %>% #ad
+    fit(data_trn) %>% 
+    workflows::pull_workflow_fit()
+  
+  
+  
+  if (  engine<-  str_split(i, "_")[[1]][[2]] != "lightgbm"){
+    
+
+  
+  res <-
+    vip::vip(
+      method = 'model',
+      object = boosting_test_resultsWF[[i]]$fit, 
+      num_features = choose_data_setX(i) %>% ncol()
+    ) %>% 
+    pluck('data') %>% 
+    # Will get a "Sign" column when using the default `method = 'model'`.
+    rename(var = Variable, imp = Importance)
+  
+  if(any(names(res) == 'Sign')) {
+    res <-
+      res %>% 
+      mutate(dir = ifelse(Sign == 'POS', +1L, -1L)) %>% 
+      mutate(imp = dir * imp)
+  }
+  
+  
+  vi_vip_model <- res
+  
+  }else{
+    
+    
+   myModel<-extract_fit_engine(boosting_test_resultsWF[[i]])
+   impObj <- lgb.importance(myModel, percentage =FALSE)
+    
+    vi_vip_model <- impObj %>%  
+      select(Feature,Gain) %>% 
+      rename(var = Feature, imp = Gain)
+    
+    
+  }
+  
+
+    train <-  model.matrix(~., data= as.data.frame(choose_data_setX(i)))[,-1]
+  
+
+  ####### DALEX
+  
+
+    
+    if (  engine<-  str_split(i, "_")[[1]][[2]] != "lightgbm"){
+    
+    expl_dalex <- 
+      DALEX::explain(
+        boosting_test_resultsWF[[i]]$fit,  
+        data = as.data.frame(choose_data_setX(i)),
+        y = choose_data_setY(i), 
+        verbose = FALSE
+      )
+    
+  } else {
+    
+    expl_dalex <- 
+      DALEX::explain(
+        boosting_test_resultsWF[[i]]$fit,  
+        data = (choose_data_setX(i)),   #xgboost cannot have the dataframe
+        y = choose_data_setY(i), 
+        verbose = FALSE
+      )
+    
+  }
+  
+    
+  
+  vi_dalex_init <- 
+    expl_dalex %>% 
+    DALEX::variable_importance(
+      type = 'difference',
+      loss_function = DALEX::loss_root_mean_square, 
+      n_sample = NULL
+    )
+  vi_dalex_init
+  
+  vi_dalex <-
+    vi_dalex_init %>% 
+    as_tibble() %>% 
+    filter(permutation == 0) %>% 
+    mutate(
+      imp = abs(dropout_loss) / max(abs(dropout_loss))
+    ) %>% 
+    select(var = variable, imp) %>%
+    filter(!(var %in% c('_baseline_', '_full_model_'))) %>% 
+    arrange(desc(imp))
+  
+  
+  vi_rnks[[i]] <-
+    list(
+      vip_model = vi_vip_model,
+      #vip_permute = vi_vip_permute,
+      #vip_shap = vi_vip_shap,
+      # fastshap = vi_fastshap,
+      dalex = vi_dalex
+    ) %>% 
+    map_dfr(bind_rows, .id = 'src') %>% 
+    group_by(src) %>% 
+    mutate(imp_abs = abs(imp)) %>% 
+    mutate(imp_abs_norm = imp_abs / sum(imp_abs)) %>% 
+    select(var, imp, imp_abs, imp_abs_norm) %>% 
+    mutate(rnk = row_number(desc(imp_abs))) %>% 
+    ungroup() %>%
+    add_column(Model = str_split(i, "_")[[1]][[2]]) %>%
+    add_column(Dataset = str_split(i, "_")[[1]][[1]])
+  
+  # print(head(vi_rnks[[i]]))
+  
+  
+}
+
+
+print("Finished big loop ............... now saving ")
+
+
+```
+
+```{r}
+result <- vi_rnks
+#save(result, model_set,  file = paste0(IncludeFigHere,"/ModelingWorkflows.RData"))
+
+prettify_engine_col <- function(data) {
+  res <- data %>% mutate_at(vars(Model), ~sprintf('{%s}', Model))
+}
+
+factor_src <- function(x) {
+  ordered(x, levels = c('vip_model', 'vip_shap', 'vip_permute', 'dalex'))
+}
+
+
+
+vi_rnks2 <- result %>%
+  bind_rows() %>%
+  as.data.frame()
+
+Threshold <- 6
+
+for (j in unique(vi_rnks2$Dataset)){
+  
+  viz <-
+    vi_rnks2 %>% 
+    filter(Dataset == j) %>%
+    group_by(var) %>% 
+    mutate(rnk_mean = rnk %>% mean(na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    mutate(lab = sprintf('%2d (%s)', rnk, scales::percent(imp_abs_norm, accuracy = 1, width = 2, justify = 'right'))) %>% 
+    filter(rnk < Threshold) %>%
+    ggplot() +
+    aes(x = src, y = var) +
+    geom_tile(aes(fill = rnk), alpha = 0.5, show.legend = F) +
+    geom_text(aes(label = lab)) +
+    scale_fill_viridis_c(direction = -1, option = "D", na.value = 'white') +
+    theme_minimal(base_family = '') +
+    facet_wrap(~Model) +
+    theme(
+      plot.title.position = 'plot',
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      plot.title = element_text(face = 'bold'),
+      plot.subtitle = ggtext::element_markdown(),
+    ) + labs(x = NULL, y = NULL)
+  
+  #pdf(paste0("NewHeatmaps_",j,".pdf"), 10, 9)
+  #print(viz)
+  #dev.off()
+  
+  ggsave(paste0("NewHeatmapSave_",j,".pdf"), plot = viz, device = "pdf")
+  
+}
+
+
+```
+
+
+
+```{r}
+#best_results <- 
+#   race_results %>% 
+#   extract_workflow_set_result("LASSOData_DtParty") %>% 
+#   select_best(metric = "rsq")
+#
+#boosting_test_results <- 
+#   race_results %>% 
+#   extract_workflow("LASSOData_DtParty") %>% 
+#   finalize_workflow(best_results) %>% #ad
+#    fit(data_trn) %>% 
+#    workflows::pull_workflow_fit()
+#
+#
+#Predict <- predict(boosting_test_results$fit, data_tst, outcomes = TRUE, members = TRUE) %>%
+#  as.data.frame() %>%
+#  add_column(BMI = data_tst$BMI)
+#
+#pdf("PredictedPoints.pdf", 3,4)
+#print(Predict %>% 
+#   ggplot(aes(x = BMI, y = .)) + 
+#   geom_abline(color = "gray50", lty = 2) + 
+#   geom_point(alpha = 0.5) + 
+#   coord_obs_pred() + 
+#   labs(x = "observed", y = "predicted") + 
+#  theme_bw()
+#)
+#dev.off()
+```
+
+
+```{r}
+
+train <- data_trn %>%
+  select(-BMI)
+dtrain <- lgb.Dataset(as.matrix(train), label = data_trn$BMI)
+
+test <- data_tst %>%
+  select(-BMI)
+dtest <- lgb.Dataset.create.valid(dtrain, as.matrix(test), label = data_tst$BMI)
+params <- list(
+  objective = "regression"
+  , metric = "l2"
+  , min_data = 1L
+  , learning_rate = 1.0
+)
+valids <- list(test = dtest)
+model <- lgb.train(
+  params = params
+  , data = dtrain
+  , nrounds = 10L
+  , valids = valids
+)
+
+preds <- predict(model, as.matrix(test))
+
+# pass other prediction parameters
+preds <- predict(
+    model,
+    as.matrix(test),
+    params = list(
+        predict_disable_shape_check = TRUE
+   )
+) %>%
+  as.data.frame() %>%
+  add_column(True =data_tst$BMI)
+
+rsq(preds, True, .)
+
+ggplot(preds, aes(x = ., y = True)) +
+    geom_point() +
+    xlab("Predicted Sale Price") +
+    ylab("BMI") 
+```
+
