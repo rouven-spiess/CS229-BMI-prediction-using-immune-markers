@@ -23,8 +23,8 @@ keras implementation (https://github.com/divamgupta/image-segmentation-keras/)
 
 ## Technologies
 * python - version 3.6.5
-* keras - version 2.3.0
-* keras_segmentation 
+* R
+* Pycaret
 * opencv_python - version 4.2.0.32
 * Augmentor - version 0.2.8
 
